@@ -1,0 +1,31 @@
+o script abaixo é uma consulta SQL é uma exemplificação de um select complexo possivel de ser feito no SQL, 
+pois existe 3 select um dentro do outro um select para representar o from e outro select para representar uma coluna da tabela. tambem tem um for.
+
+
+
+DECLARE @dataIni as datetime2;
+SET @dataIni = '2020-08-01 00:00:00.0000000'
+
+DECLARE @dataFim as datetime2;
+SET @dataFim = '2021-08-31 23:59:59.0000000'
+
+select fou, mensagem, [DISPARO DO ALARME], [RECONHECER O ALARME], [OCORRÊNCIA REGISTRADA] AS 'REGISTRO ENVIADO POR EMAIL', [OCORRÊNCIA NORMALIZADA] AS 'ALARME NORMALIZADO', [POSTO DE OPERAÇÃO]
+       from(
+       SELECT TOP (1000) t3.issuenum as FOU
+         , convert(varchar(30), t1.[OLDSTRING]) as ESTADO
+      , t2.CREATED AS fim
+         , t3.SUMMARY as menssagem
+         , t3.CREATED as 'DISPARO DO ALARME' 
+		 , [POSTO DE OPERAÇÃO] = (SELECT STRINGVALUE from [jira_workflow].[dbo].[customfieldvalue] where CUSTOMFIELD = '10900' )
+  FROM [jira_workflow].[dbo].[changeitem]
+       as t1 inner join [jira_workflow].[dbo].[changegroup] as t2 on t1.groupid = t2.id
+       inner join [jira_workflow].[dbo].[jiraissue] as t3 on t2.issueid = t3.id
+       inner join [jira_workflow].[dbo].[customfieldvalue] as t4 on t3.id = t4.ISSUE
+	   where t1.FIELD = 'status' and (OLDSTRING  like '%RECONHECER O ALARME%' or OLDSTRING like '%registrada%' or OLDSTRING like '%normalizada%')  and (t3.CREATED > @dataIni) and (t3.CREATED< @dataFim)
+)as resultado
+pivot (max(fim)
+for ESTADO 
+in ([RECONHECER O ALARME], [OCORRÊNCIA REGISTRADA] ,[OCORRÊNCIA NORMALIZADA])
+) em_coluna
+where  [OCORRÊNCIA REGISTRADA] is not null and [OCORRÊNCIA NORMALIZADA] is not null
+order by 1
