@@ -1,0 +1,8 @@
+na query abaixo realizei delete de 3 linha usando top e in para realizar uma seleção 
+
+delete	FROM [Parametrizacao].[dbo].[LogicaAlarme] 
+		where tagname IN
+			(SELECT TOP 3 tagname
+				FROM [Parametrizacao].[dbo].[LogicaAlarme]
+				where Tagname like '%JPM01_ArCond_A_PACT%'
+				order by tagname desc)
